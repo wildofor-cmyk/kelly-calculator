@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用全参数凯利公式计算器</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f4f8; color: #333; line-height: 1.6; padding: 20px; }
+        .container { max-width: 850px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: #1e3a8a; margin-bottom: 20px; font-size: 24px; }
+        .dashboard { display: table; width: 100%; margin-bottom: 25px; background: #f1f5f9; border-radius: 8px; padding: 15px; border: 1px solid #cbd5e1; }
+        .stat-box { display: table-cell; width: 33.33%; text-align: center; padding: 10px; }
+        .stat-box:not(:last-child) { border-right: 1px solid #cbd5e1; }
+        .stat-label { font-size: 14px; color: #475569; margin-bottom: 5px; }
+        .stat-value { font-size: 22px; font-weight: bold; color: #0f172a; }
+        .stat-value.money { color: #2563eb; }
+        .main-layout { display: table; width: 100%; }
+        .panel { display: table-cell; width: 50%; vertical-align: top; }
+        .panel-left { padding-right: 15px; }
+        .panel-right { padding-left: 15px; border-left: 1px solid #cbd5e1; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; color: #334155; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; }
+        .calc-hint { font-size: 13px; color: #b45309; margin-top: 6px; padding: 8px; background: #fef3c7; border-radius: 4px; font-weight: 600; }
+        .btn-grid { margin-top: 15px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .btn-win { background-color: #10b981; color: white; }
+        .btn-win:hover { background-color: #059669; }
+        .btn-lose { background-color: #ef4444; color: white; }
+        .btn-lose:hover { background-color: #dc2626; }
+        .btn-reset { background-color: #64748b; color: white; }
+        .btn-reset:hover { background-color: #475569; }
+        .history-title { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 10px; }
+        .history-container { max-height: 380px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #cbd5e1; }
+        th { background-color: #e2e8f0; color: #334155; position: sticky; top: 0; }
+        .text-win { color: #10b981; font-weight: bold; }
+        .text-lose { color: #ef4444; font-weight: bold; }
+        .nav-box { font-size: 12px; text-align: center; margin-bottom: 15px; background: #e0f2fe; padding: 6px; border-radius: 6px; color: #0369a1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-box">ℹ️ 这是您的第二个程序。若想回第一个程序，请在网址结尾删掉 index2.html</div>
+    <h1>📊 通用全参数凯利公式计算器</h1>
+    
+    <div class="dashboard">
+        <div class="stat-box">
+            <div class="stat-label">当前总资金</div>
+            <div class="stat-value money" id="display-money">￥1,000.00</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">总操作次数</div>
+            <div class="stat-value" id="display-count">0 次</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">实际综合胜率</div>
+            <div class="stat-value" id="display-win-rate">0.0%</div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="panel panel-left">
+            <div class="input-group">
+                <label for="input-money">账户总本金 (￥):</label>
+                <input type="number" id="input-money" value="1000" min="0">
+            </div>
+
+            <div class="input-group">
+                <label for="input-prob">1. 预估本次事件胜率 (%):</label>
+                <input type="number" id="input-prob" value="60" min="0" max="100">
+            </div>
+
+            <div class="input-group">
+                <label for="input-win-rate">2. 赢了的净收益率 (%): <small style="color:#64748b;">(翻倍填100)</small></label>
+                <input type="number" id="input-win-rate" value="100" min="0">
+            </div>
+
+            <div class="input-group">
+                <label for="input-lose-rate">3. 输了的净亏损率 (%): <small style="color:#ef4444;">(全输光填100，若能拿回90%则填10)</small></label>
+                <input type="number" id="input-lose-rate" value="100" min="0" max="100">
+            </div>
+
+            <div class="input-group">
+                <label for="input-fraction">4. 凯利仓位系数: <small style="color:#64748b;">(全仓填1，半仓填0.5)</small></label>
+                <input type="number" id="input-fraction" value="0.5" min="0" max="1" step="0.1">
+                <div class="calc-hint" id="kelly-hint">计算中...</div>
+            </div>
+
+            <div class="input-group">
+                <label for="input-bet">本次决定名义投注额 (￥):</label>
+                <input type="number" id="input-bet" value="100" min="0">
+            </div>
+
+            <div class="btn-grid">
+                <button class="btn-win" onclick="handleResult(true)">👍 选自己赢（按自定义收益率结算）</button>
+                <button class="btn-lose" onclick="handleResult(false)">👎 选自己输（按自定义亏损率结算）</button>
+                <button class="btn-reset" onclick="resetAll()">🔄 重置所有数据</button>
+            </div>
+        </div>
+
+        <div class="panel panel-right">
+            <div class="history-title">📜 每次操作实时存档明细</div>
+            <div class="history-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>预估参数(胜/盈/亏)</th>
+                            <th>名义投注</th>
+                            <th>实际盈亏结果</th>
+                            <th>最新总资金</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-log">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 采用与v2不同的本地存储Key，防止冲突
+    let totalMoney = parseFloat(localStorage.getItem('kelly_v3_totalMoney')) || 1000;
+    let betCount = parseInt(localStorage.getItem('kelly_v3_betCount')) || 0;
+    let winCount = parseInt(localStorage.getItem('kelly_v3_winCount')) || 0;
+    let historyData = JSON.parse(localStorage.getItem('kelly_v3_historyData')) || [];
+
+    const inputMoney = document.getElementById('input-money');
+    const inputProb = document.getElementById('input-prob');
+    const inputWinRate = document.getElementById('input-win-rate');
+    const inputLoseRate = document.getElementById('input-lose-rate');
+    const inputFraction = document.getElementById('input-fraction');
+    const inputBet = document.getElementById('input-bet');
+    
+    const displayMoney = document.getElementById('display-money');
+    const displayCount = document.getElementById('display-count');
+    const displayWinRate = document.getElementById('display-win-rate');
+    const kellyHint = document.getElementById('kelly-hint');
+    const historyLog = document.getElementById('history-log');
+
+    inputMoney.addEventListener('input', function() {
+        if(betCount === 0) {
+            totalMoney = parseFloat(inputMoney.value) || 0;
+            saveToStorage();
+            updateDashboard();
+            calculateKelly();
+        }
+    });
+
+    // 监听所有核心参数
+    [inputProb, inputWinRate, inputLoseRate, inputFraction].forEach(element => {
+        element.addEventListener('input', () => { calculateKelly(); });
+    });
+
+    // 广义凯利公式计算: f = (p / lose_rate) - (q / win_rate)
+    function calculateKelly() {
+        const p = (parseFloat(inputProb.value) || 0) / 100;
+        const winRatePercent = (parseFloat(inputWinRate.value) || 0) / 100;
+        const loseRatePercent = (parseFloat(inputLoseRate.value) || 0) / 100;
+        const fraction = parseFloat(inputFraction.value) || 0.5;
+        const q = 1 - p;
+        
+        let kellyFraction = 0;
+        if (winRatePercent > 0 && loseRatePercent > 0) {
+            kellyFraction = (p / loseRatePercent) - (q / winRatePercent);
+        }
+        if (kellyFraction < 0) kellyFraction = 0;
+
+        // 乘以打折系数（如半仓凯利系数）
+        const finalFraction = kellyFraction * fraction;
+
+        const recommendedBet = totalMoney * finalFraction;
+        kellyHint.innerHTML = `🌟 建议下注比例: ${(finalFraction * 100).toFixed(2)}%<br>👉 建议投注金额: ￥${recommendedBet.toFixed(2)}<br><small>(纯凯利无打折建议: ${(kellyFraction*100).toFixed(2)}%)</small>`;
+        
+        if(recommendedBet >= 0) {
+            inputBet.value = Math.round(recommendedBet);
+        }
+    }
+
+    function saveToStorage() {
+        localStorage.setItem('kelly_v3_totalMoney', totalMoney);
+        localStorage.setItem('kelly_v3_betCount', betCount);
+        localStorage.setItem('kelly_v3_winCount', winCount);
+        localStorage.setItem('kelly_v3_historyData', JSON.stringify(historyData));
+    }
+
+    function updateDashboard() {
+        displayMoney.innerText = `￥${totalMoney.toFixed(2)}`;
+        displayCount.innerText = `${betCount} 次`;
+        const realTimeWinRate = betCount > 0 ? (winCount / betCount * 100).toFixed(1) : '0.0';
+        displayWinRate.innerText = `${realTimeWinRate}%`;
+    }
+
+    function renderHistory() {
+        historyLog.innerHTML = "";
+        for (let i = historyData.length - 1; i >= 0; i--) {
+            const item = historyData[i];
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.prob}% / +${item.wR}% / -${item.lR}%</td>
+                <td>￥${item.bet}</td>
+                <td class="${item.cls}">${item.txt}</td>
+                <td>￥${item.currentTotal.toFixed(2)}</td>
+            `;
+            historyLog.appendChild(row);
+        }
+    }
+
+    function handleResult(isWin) {
+        const currentBet = parseFloat(inputBet.value) || 0;
+        const currentProb = parseFloat(inputProb.value) || 0;
+        const winRatePercent = (parseFloat(inputWinRate.value) || 0) / 100;
+        const loseRatePercent = (parseFloat(inputLoseRate.value) || 0) / 100;
+
+        if (currentBet <= 0) { alert("下注量必须大于 0！"); return; }
+        if (currentBet > totalMoney) { alert("名义下注额不能超过总本金！"); return; }
+        if (winRatePercent <= 0 || loseRatePercent <= 0) { alert("收益率和亏损率必须大于0！"); return; }
+
+        betCount++;
+        let resultText = "";
+        let resultClass = "";
+
+        if (isWin) {
+            winCount++;
+            const change = currentBet * winRatePercent; // 赚取对应比例
+            totalMoney += change;
+            resultText = "赢 (+" + change.toFixed(1) + ")";
+            resultClass = "text-win";
+        } else {
+            const change = currentBet * loseRatePercent; // 只亏损对应的净亏损比例
+            totalMoney -= change;
+            resultText = "输 (-" + change.toFixed(1) + ")";
+            resultClass = "text-lose";
+        }
+
+        inputMoney.value = Math.round(totalMoney);
+
+        historyData.push({
+            id: betCount,
+            prob: currentProb,
+            wR: (winRatePercent*100).toFixed(0),
+            lR: (loseRatePercent*100).toFixed(0),
+            bet: currentBet,
+            txt: resultText,
+            cls: resultClass,
+            currentTotal: totalMoney
+        });
+
+        saveToStorage();
+        renderHistory();
+        updateDashboard();
+        calculateKelly();
+    }
+
+    function resetAll() {
+        if(confirm("确定要清空所有数据重新开始吗？")) {
+            localStorage.removeItem('kelly_v3_totalMoney');
+            localStorage.removeItem('kelly_v3_betCount');
+            localStorage.removeItem('kelly_v3_winCount');
+            localStorage.removeItem('kelly_v3_historyData');
+
+            totalMoney = 1000; betCount = 0; winCount = 0; historyData = [];
+            inputMoney.value = 1000; inputProb.value = 60; inputWinRate.value = 100; inputLoseRate.value = 100; inputFraction.value = 0.5; inputBet.value = 100;
+            renderHistory(); updateDashboard(); calculateKelly();
+        }
+    }
+
+    // 初始化
+    inputMoney.value = Math.round(totalMoney);
+    renderHistory();
+    updateDashboard();
+    calculateKelly();
+</script>
+</body>
+</html>
